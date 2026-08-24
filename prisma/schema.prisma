@@ -1,13 +1,64 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
-generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
-}
+// schema.prisma
 
 datasource db {
   provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  slug        String   @unique   // "sde-resume-race"
+  name        String             // "SDE Resume Race"
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  entries Entry[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  displayName  String
+  email        String?  @unique      // optional, for lightweight identification
+  deviceToken  String?  @unique      // for cookie/localStorage-based identity, see §4
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+
+  entries      Entry[]
+  transactions PointTransaction[]
+}
+
+model Entry {
+  id           String   @id @default(cuid())
+  userId       String
+  categoryId   String
+  name         String              // display name shown on leaderboard (can differ from User.displayName)
+  avatarUrl    String?
+  resumeUrl    String
+  college      String
+  gradYear     Int
+  points       Int      @default(0)   // denormalized running total, kept in sync via transactions
+  createdAt    DateTime @default(now())
+
+  user         User      @relation(fields: [userId], references: [id])
+  category     Category  @relation(fields: [categoryId], references: [id])
+  transactions PointTransaction[]
+
+  @@index([categoryId, points])       // fast leaderboard ordering per category
+}
+
+model PointTransaction {
+  id         String   @id @default(cuid())
+  entryId    String
+  userId     String
+  amount     Int                      // e.g. +10, can be negative later for corrections
+  type       String   // "DEMO_OUTBID" | "MANUAL_ADJUST" | (future: "RAZORPAY_PAYMENT")
+  metadata   Json?    // free-form: e.g. { source: "button_click" }, later { razorpayPaymentId }
+  createdAt  DateTime @default(now())
+
+  entry Entry @relation(fields: [entryId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
 }
