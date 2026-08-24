@@ -37,3 +37,63 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+import { getDeviceToken } from '@/lib/identity'
+
+export async function POST(request: Request) {
+  try {
+    const deviceToken = await getDeviceToken()
+    if (!deviceToken) {
+      return NextResponse.json({ error: 'Unauthorized: No identity found' }, { status: 401 })
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { deviceToken }
+    })
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized: Invalid identity' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { name, resumeUrl, college, gradYear } = body
+
+    if (!name || !resumeUrl || !college || !gradYear) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    const category = await prisma.category.findUnique({
+      where: { slug: 'sde-resume-race' }
+    })
+
+    if (!category) {
+      return NextResponse.json({ error: 'Target category not found' }, { status: 404 })
+    }
+
+    // Optional: check if user already has an entry for this category
+    const existingEntry = await prisma.entry.findFirst({
+      where: { userId: user.id, categoryId: category.id }
+    })
+
+    if (existingEntry) {
+      return NextResponse.json({ error: 'You have already submitted an entry for this category' }, { status: 400 })
+    }
+
+    const entry = await prisma.entry.create({
+      data: {
+        name,
+        resumeUrl,
+        college,
+        gradYear: Number(gradYear),
+        points: 0,
+        userId: user.id,
+        categoryId: category.id,
+      }
+    })
+
+    return NextResponse.json(entry, { status: 201 })
+  } catch (error) {
+    console.error('Error creating entry:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
