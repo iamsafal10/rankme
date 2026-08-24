@@ -1,4 +1,5 @@
 import { RankBadge } from './RankBadge'
+import { OutbidButton } from './OutbidButton'
 
 interface LeaderboardRowProps {
   rank: number
@@ -9,9 +10,10 @@ interface LeaderboardRowProps {
     points: number
     avatarUrl?: string | null
   }
+  onOutbidSuccess: () => void
 }
 
-export function LeaderboardRow({ rank, entry }: LeaderboardRowProps) {
+export function LeaderboardRow({ rank, entry, onOutbidSuccess }: LeaderboardRowProps) {
   return (
     <div className="flex items-center justify-between p-4 bg-white border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
       <div className="flex items-center gap-4">
@@ -39,13 +41,7 @@ export function LeaderboardRow({ rank, entry }: LeaderboardRowProps) {
           <div className="font-bold text-gray-900 text-lg">{entry.points.toLocaleString()}</div>
           <div className="text-xs text-gray-500 uppercase font-semibold tracking-wider">pts</div>
         </div>
-        {/* Placeholder for Outbid button (Phase 5 or so) */}
-        <button 
-          disabled
-          className="px-4 py-2 bg-gray-100 text-gray-400 font-bold rounded-lg cursor-not-allowed opacity-50"
-        >
-          OUTBID
-        </button>
+        <OutbidButton entryId={entry.id} onOutbidSuccess={onOutbidSuccess} />
       </div>
     </div>
   )

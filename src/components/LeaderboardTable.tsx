@@ -17,10 +17,29 @@ export function LeaderboardTable({ categorySlug }: { categorySlug: string }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const fetchLeaderboard = async (isSilent = false) => {
+    try {
+      if (!isSilent) setIsLoading(true)
+      setError(null)
+      const res = await fetch(`/api/entries?category=${categorySlug}`)
+      
+      if (!res.ok) {
+        throw new Error('Failed to fetch leaderboard')
+      }
+      
+      const data = await res.json()
+      setEntries(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      if (!isSilent) setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
     let isMounted = true
 
-    async function fetchLeaderboard() {
+    async function initialFetch() {
       try {
         setIsLoading(true)
         setError(null)
@@ -39,7 +58,7 @@ export function LeaderboardTable({ categorySlug }: { categorySlug: string }) {
       }
     }
 
-    fetchLeaderboard()
+    initialFetch()
 
     return () => {
       isMounted = false
@@ -83,7 +102,12 @@ export function LeaderboardTable({ categorySlug }: { categorySlug: string }) {
       </div>
       <div className="divide-y divide-gray-100">
         {entries.map((entry, index) => (
-          <LeaderboardRow key={entry.id} rank={index + 1} entry={entry} />
+          <LeaderboardRow 
+            key={entry.id} 
+            rank={index + 1} 
+            entry={entry} 
+            onOutbidSuccess={() => fetchLeaderboard(true)} 
+          />
         ))}
       </div>
     </div>
