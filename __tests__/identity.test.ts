@@ -81,10 +81,12 @@ describe('POST /api/users/identify logic', () => {
 
   it('fetches existing user when valid cookie is present', async () => {
     // First create a real user in DB
-    const existingUser = await prisma.user.create({
-      data: {
+    const existingUser = await prisma.user.upsert({
+      where: { deviceToken: 'known-valid-token' },
+      update: {},
+      create: {
         deviceToken: 'known-valid-token',
-        displayName: 'Existing Racer',
+        displayName: 'Test User'
       }
     })
 

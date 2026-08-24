@@ -58,8 +58,24 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, resumeUrl, college, gradYear } = body
 
-    if (!name || !resumeUrl || !college || !gradYear) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    if (
+      !name || typeof name !== 'string' || name.trim().length < 2 ||
+      !resumeUrl || typeof resumeUrl !== 'string' ||
+      !college || typeof college !== 'string' ||
+      !gradYear
+    ) {
+      return NextResponse.json({ error: 'Missing or invalid required fields' }, { status: 400 })
+    }
+
+    try {
+      new URL(resumeUrl)
+    } catch {
+      return NextResponse.json({ error: 'Invalid resume URL format' }, { status: 400 })
+    }
+
+    const parsedGradYear = parseInt(gradYear.toString(), 10)
+    if (isNaN(parsedGradYear)) {
+      return NextResponse.json({ error: 'Invalid graduation year' }, { status: 400 })
     }
 
     const category = await prisma.category.findUnique({
@@ -84,7 +100,7 @@ export async function POST(request: Request) {
         name,
         resumeUrl,
         college,
-        gradYear: Number(gradYear),
+        gradYear: parsedGradYear,
         points: 0,
         userId: user.id,
         categoryId: category.id,

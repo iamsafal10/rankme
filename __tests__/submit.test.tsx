@@ -81,7 +81,7 @@ describe('POST /api/entries logic', () => {
     const res = await POST(req)
     expect(res.status).toBe(400)
     const data = await res.json()
-    expect(data.error).toBe('Missing required fields')
+    expect(data.error).toBe('Missing or invalid required fields')
   })
 
   it('creates entry on valid payload', async () => {
